@@ -8,3 +8,4 @@
 .game-view:fullscreen,.game-view.is-maximized,.game-view.window-maximized{background:var(--paper);padding:22px 28px;overflow:auto}.game-view:fullscreen .game-layout,.game-view.is-maximized .game-layout,.game-view.window-maximized .game-layout{min-height:calc(100vh - 145px)}.game-view:fullscreen .board-panel,.game-view.is-maximized .board-panel,.game-view.window-maximized .board-panel{display:grid;align-content:center}.game-view.window-maximized{position:fixed;inset:0;z-index:1000}
 @media(max-width:850px){:root{--tile:clamp(20px,5.2vw,38px)}.game-layout{grid-template-columns:1fr}.heading-actions{gap:10px}.maximize-button span{display:none}}
 @media(max-width:600px){:root{--tile:clamp(18px,5.75vw,29px)}.maximize-button{padding:10px}.game-view:fullscreen,.game-view.is-maximized,.game-view.window-maximized{padding:12px}}
+.place-button:disabled{opacity:.62;cursor:wait;box-shadow:none}.message.checking{color:var(--navy)}
