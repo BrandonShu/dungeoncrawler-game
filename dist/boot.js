@@ -9,7 +9,7 @@
   traitRow.after(backgroundRow);
   const backgroundSelect=document.getElementById('backgroundSelect'),arena=document.querySelector('.arena-wrap');
   canvas.style.mixBlendMode='screen';canvas.style.backgroundColor='transparent';
-  const setBackground=()=>{arena.style.background=`#060708 url("assets/${backgroundSelect.value}-castle.png") center/cover no-repeat`};setBackground();backgroundSelect.onchange=setBackground;
+  const setBackground=()=>{arena.style.background=`#060708 url("assets/${backgroundSelect.value}-castle-pixel.png") center/cover no-repeat`};setBackground();backgroundSelect.onchange=setBackground;
 
   const normal=[
     ['◼','Stone Skin','NORMAL · +18 maximum health',s=>{s.maxHp+=18;s.hp+=18}],['⚔','Keen Edge','NORMAL · +10% damage',s=>s.damage*=1.1],['⌁','Quick Hands','NORMAL · +10% attack speed',s=>s.rate*=1.1],['»','Long Stride','NORMAL · +8% movement speed',s=>s.speed*=1.08],['♥','Warm Blood','NORMAL · Heal 1 health per kill',s=>s.lifesteal+=1],['◒','Wide Arc','NORMAL · Slightly larger attacks',s=>s.size+=2]
