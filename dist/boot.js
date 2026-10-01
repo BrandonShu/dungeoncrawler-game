@@ -1,168 +1,56 @@
 (() => {
-  const enterButton = document.getElementById('enterBtn');
-  const objectiveTitle = document.querySelector('.objective b');
-  const objectiveDetail = document.getElementById('enemyCount');
-  const roomRuleText = document.getElementById('roomRule');
-  const progressLabel = document.querySelectorAll('.meter-block')[1].querySelector('span');
-  const door = { x: 480, y: 58, radius: 78 };
-  const legendaryPowers = [
-    ['♛','Titan Heart','Legendary · +120 maximum health and +8 healing per kill',s=>{s.maxHp+=120;s.hp=s.maxHp;s.lifesteal+=8}],
-    ['⚡','Storm Soul','Legendary · +55% attack speed and +25% movement speed',s=>{s.rate*=1.55;s.speed*=1.25}],
-    ['✹','Worldsplitter','Legendary · +80% damage and a much larger attack',s=>{s.damage*=1.8;s.size+=8}]
+  C.warden={name:'Grave Warden',title:'The Last Oath',icon:'♜',color:'#7fb069',hp:150,speed:190,damage:14,rate:1.45,projectile:0,desc:'Tower shield · unbreakable guard'};
+  C.voidcaller={name:'Voidcaller',title:'The Starless',icon:'◉',color:'#c071e8',hp:75,speed:218,damage:24,rate:1.05,projectile:1,desc:'Void orbs · immense burst damage'};
+  cards();
+
+  const setup=document.querySelector('.setup-panel'),traitRow=document.querySelector('.trait-row');
+  const backgroundRow=document.createElement('div');backgroundRow.className='trait-row';
+  backgroundRow.innerHTML='<label for="backgroundSelect">Castle arena</label><select id="backgroundSelect"><option value="abandoned">Abandoned Castle · warm ruins</option><option value="haunted">Haunted Castle · spectral halls</option></select>';
+  traitRow.after(backgroundRow);
+  const backgroundSelect=document.getElementById('backgroundSelect'),arena=document.querySelector('.arena-wrap');
+  canvas.style.mixBlendMode='screen';canvas.style.backgroundColor='transparent';
+  const setBackground=()=>{arena.style.background=`#060708 url("assets/${backgroundSelect.value}-castle.png") center/cover no-repeat`};setBackground();backgroundSelect.onchange=setBackground;
+
+  const normal=[
+    ['◼','Stone Skin','NORMAL · +18 maximum health',s=>{s.maxHp+=18;s.hp+=18}],['⚔','Keen Edge','NORMAL · +10% damage',s=>s.damage*=1.1],['⌁','Quick Hands','NORMAL · +10% attack speed',s=>s.rate*=1.1],['»','Long Stride','NORMAL · +8% movement speed',s=>s.speed*=1.08],['♥','Warm Blood','NORMAL · Heal 1 health per kill',s=>s.lifesteal+=1],['◒','Wide Arc','NORMAL · Slightly larger attacks',s=>s.size+=2]
   ];
+  const uncommon=[
+    ['⬟','Bulwark','UNCOMMON · +35 maximum health',s=>{s.maxHp+=35;s.hp+=35}],['☠','Ravager','UNCOMMON · +18% damage',s=>s.damage*=1.18],['✣','Battle Haste','UNCOMMON · +18% attack speed',s=>s.rate*=1.18],['♦','Vampiric Fang','UNCOMMON · Heal 3 health per kill',s=>s.lifesteal+=3],['♧','Lucky Coin','UNCOMMON · +15% fortune',s=>s.fortune+=.15]
+  ];
+  const rare=[
+    ['♜','Colossus','RARE · +65 maximum health',s=>{s.maxHp+=65;s.hp+=65}],['⌖','Executioner','RARE · +32% damage',s=>s.damage*=1.32],['ϟ','Tempest','RARE · +32% attack speed',s=>s.rate*=1.32],['☽','Phantom Step','RARE · +25% movement speed',s=>s.speed*=1.25],['✦','Giant Reach','RARE · Much larger attacks',s=>s.size+=5]
+  ];
+  const epic=[
+    ['♨','Dragonblood','EPIC · +95 health and fully heal',s=>{s.maxHp+=95;s.hp=s.maxHp}],['✸','Annihilator','EPIC · +55% damage',s=>s.damage*=1.55],['◴','Timeweaver','EPIC · +48% attack speed',s=>s.rate*=1.48],['❣','Soul Feast','EPIC · Heal 7 health per kill',s=>s.lifesteal+=7],['☄','Starfire','EPIC · +35% damage and +4 attack size',s=>{s.damage*=1.35;s.size+=4}]
+  ];
+  const legendary=[
+    ['♛','Eternal Flame','LEGENDARY · +160 health and +10 healing per kill',s=>{s.maxHp+=160;s.hp=s.maxHp;s.lifesteal+=10}],['⚡','Lightning God','LEGENDARY · +75% attack speed and +30% speed',s=>{s.rate*=1.75;s.speed*=1.3}],['✹','Void Reaver','LEGENDARY · Double all damage',s=>s.damage*=2],['◎','Omnipresence','LEGENDARY · +50% damage, +15% speed, enormous attacks',s=>{s.damage*=1.5;s.speed*=1.15;s.size+=10}]
+  ];
+  const ranked=[{name:'normal',weight:60,list:normal},{name:'uncommon',weight:25,list:uncommon},{name:'rare',weight:10,list:rare},{name:'epic',weight:4,list:epic},{name:'legendary',weight:1,list:legendary}];
+  const objectiveTitle=document.querySelector('.objective b'),objectiveDetail=document.getElementById('enemyCount'),roomRuleText=document.getElementById('roomRule'),progressLabel=document.querySelectorAll('.meter-block')[1].querySelector('span');
+  const door={x:480,y:58,radius:78};
 
-  enterButton.onclick = event => { event.preventDefault(); init(); };
+  const weightedAbility=()=>{let roll=Math.random()*100,total=0,rank=normal;for(const group of ranked){total+=group.weight;if(roll<total){rank=group.list;break}}return rank[Math.floor(Math.random()*rank.length)]};
+  const abilityChoices=()=>{const result=[];while(result.length<3){const item=weightedAbility();if(!result.includes(item))result.push(item)}return result};
+  const grant=(power)=>{power[3](S);S.unlockedAbilities.add(power[1]);if(S.relics.length<6)S.relics.push(power)};
+  const openGate=()=>{S.phase='gate';S.paused=false;objectiveTitle.textContent='The door is open';objectiveDetail.textContent='Move to the north door';roomRuleText.textContent='Stand near the open door and press Enter.';ui();xpText.textContent='ROOM CLEARED';xpBar.style.width='100%'};
+  const showAbilities=(boss)=>{const options=boss?[...legendary].sort(()=>Math.random()-.5).slice(0,3):abilityChoices();choiceEyebrow.textContent=boss?'Boss defeated':'Level complete';choiceTitle.textContent=boss?'Choose a legendary ability':'Choose an ability';choiceCopy.textContent=boss?'The guardian’s power is yours.':'Higher-ranked abilities are increasingly rare.';choiceGrid.innerHTML=options.map((p,i)=>`<button class="choice-card" data-i="${i}"><span class="choice-icon">${p[0]}</span><h3>${p[1]}</h3><p>${p[2]}</p></button>`).join('');choiceGrid.querySelectorAll('button').forEach(b=>b.onclick=()=>{grant(options[+b.dataset.i]);choiceDialog.close();openGate()});choiceDialog.showModal()};
 
-  const baseSpawn = spawn;
-  const prepareRoom = () => {
-    baseSpawn();
-    S.x = 480;
-    S.y = 550;
-    S.xp = 0;
-    S.xpNext = Number.MAX_SAFE_INTEGER;
-    S.roomEnemyTotal = S.enemies.length;
-    if (S.room % 10 === 0) {
-      const bossHealth = 620 * (1 + S.room * .12);
-      S.enemies = [{x:480,y:165,r:42,hp:bossHealth,max:bossHealth,speed:48+S.room,damage:28+S.room*1.2,hit:0,type:'boss',cd:0}];
-      S.roomEnemyTotal = 1;
-      roomRuleText.textContent = 'Boss chamber · defeat the guardian for a legendary ability.';
-    }
-    S.phase = 'countdown';
-    S.countdown = 3;
-    S.paused = true;
-    progressLabel.textContent = 'ROOM PROGRESS';
-    objectiveTitle.textContent = S.room % 10 === 0 ? 'Boss incoming' : 'Prepare yourself';
-    objectiveDetail.textContent = '3';
-    xpText.textContent = 'ROOM NOT CLEARED';
-    xpBar.style.width = '0%';
-  };
+  const originalInit=init;init=()=>{setBackground();originalInit();S.unlockedAbilities=new Set()};
+  document.getElementById('enterBtn').onclick=e=>{e.preventDefault();init()};
+  const baseSpawn=spawn;spawn=()=>{baseSpawn();S.x=480;S.y=550;S.xp=0;S.xpNext=Number.MAX_SAFE_INTEGER;S.unlockedAbilities??=new Set();
+    S.enemies.forEach((enemy,index)=>{if(index%5===0){enemy.type='wraith';enemy.r=11;enemy.hp*=.7;enemy.max=enemy.hp;enemy.speed*=1.65;enemy.damage*=.8}else if(index%4===0){enemy.type='sentinel';enemy.r=24;enemy.hp*=2.1;enemy.max=enemy.hp;enemy.speed*=.58;enemy.damage*=1.4}});
+    if(S.room%5===0){const hp=560*(1+S.room*.13);S.enemies=[{x:480,y:165,r:42,hp,max:hp,speed:50+S.room,damage:26+S.room*1.15,hit:0,type:'boss',cd:0}]}
+    S.roomEnemyTotal=S.enemies.length;S.phase='countdown';S.countdown=3;S.paused=true;progressLabel.textContent='ROOM PROGRESS';objectiveTitle.textContent=S.room%5===0?'Boss incoming':'Prepare yourself';objectiveDetail.textContent='3';roomRuleText.textContent=S.room%5===0?'Boss chamber · win a legendary ability.':'Combat begins after the countdown.';xpText.textContent='ROOM NOT CLEARED';xpBar.style.width='0%'};
+  choose=type=>{if(type!=='room')return;S.level+=1;S.xp=0;S.xpNext=Number.MAX_SAFE_INTEGER;levelLabel.textContent=S.level;S.phase='ability';showAbilities(S.room%5===0)};
 
-  spawn = () => {
-    if (S && S.phase === 'reward') {
-      S.room = Math.max(1, S.room - 1);
-      S.phase = 'gate';
-      S.paused = false;
-      objectiveTitle.textContent = 'The door is open';
-      objectiveDetail.textContent = 'Move to the north door';
-      roomRuleText.textContent = 'Stand near the open door and press Enter.';
-      xpText.textContent = 'ROOM CLEARED';
-      xpBar.style.width = '100%';
-      return;
-    }
-    prepareRoom();
-  };
+  const baseUpdate=update;update=delta=>{if(!S)return baseUpdate(delta);S.xp=0;S.xpNext=Number.MAX_SAFE_INTEGER;
+    if(S.phase==='countdown'){S.paused=true;S.countdown=Math.max(0,S.countdown-delta);const n=Math.ceil(S.countdown);objectiveTitle.textContent=n?(S.room%5===0?'Boss incoming':'Prepare yourself'):'Fight!';objectiveDetail.textContent=n?String(n):'The chamber is live';if(S.countdown<=0){S.phase='combat';S.paused=false;objectiveTitle.textContent=S.room%5===0?'Defeat the guardian':'Clear the chamber'}return}
+    if(S.phase==='gate'){S.paused=false;baseUpdate(delta);S.xp=0;xpText.textContent='ROOM CLEARED';xpBar.style.width='100%';const near=Math.hypot(S.x-door.x,S.y-door.y)<door.radius;objectiveTitle.textContent=near?'Press Enter':'The door is open';objectiveDetail.textContent=near?'Enter the next chamber':'Move to the north door';return}
+    if(!S.paused&&S.enemies.length){const target=S.enemies.reduce((n,e)=>!n||Math.hypot(e.x-S.x,e.y-S.y)<Math.hypot(n.x-S.x,n.y-S.y)?e:n,null);mouse.x=target.x;mouse.y=target.y;const held=mouse.down;mouse.down=true;baseUpdate(delta);mouse.down=held;S.xp=0;const dead=S.roomEnemyTotal-S.enemies.length;xpText.textContent=`${dead} / ${S.roomEnemyTotal} DEFEATED`;xpBar.style.width=`${dead/S.roomEnemyTotal*100}%`;return}baseUpdate(delta);S.xp=0};
 
-  const baseChoose = choose;
-  const openGate = () => {
-    S.phase = 'gate';
-    S.paused = false;
-    objectiveTitle.textContent = 'The door is open';
-    objectiveDetail.textContent = 'Move to the north door';
-    roomRuleText.textContent = 'Stand near the open door and press Enter.';
-    ui();
-    xpText.textContent = 'ROOM CLEARED';
-    xpBar.style.width = '100%';
-  };
-
-  const showLegendaryChoice = () => {
-    choiceEyebrow.textContent = 'Boss defeated';
-    choiceTitle.textContent = 'Choose a legendary ability';
-    choiceCopy.textContent = 'The guardian’s power is yours. Choose one lasting gift.';
-    choiceGrid.innerHTML = legendaryPowers.map((power,index)=>`<button class="choice-card" data-i="${index}"><span class="choice-icon">${power[0]}</span><h3>${power[1]}</h3><p>${power[2]}</p></button>`).join('');
-    choiceGrid.querySelectorAll('button').forEach(button=>button.onclick=()=>{
-      const power=legendaryPowers[+button.dataset.i];
-      power[3](S);
-      if(S.relics.length<6)S.relics.push(power);
-      choiceDialog.close();
-      openGate();
-    });
-    choiceDialog.showModal();
-  };
-
-  choose = type => {
-    if (type !== 'room') return;
-    S.level += 1;
-    S.xp = 0;
-    S.xpNext = Number.MAX_SAFE_INTEGER;
-    levelLabel.textContent = S.level;
-    xpText.textContent = 'ROOM CLEARED';
-    xpBar.style.width = '100%';
-    if (S.room % 10 === 0) {
-      S.phase = 'legendary';
-      showLegendaryChoice();
-      return;
-    }
-    S.phase = 'reward';
-    baseChoose(type);
-  };
-
-  const baseUpdate = update;
-  update = delta => {
-    if (!S) return baseUpdate(delta);
-    S.xp = 0;
-    S.xpNext = Number.MAX_SAFE_INTEGER;
-    if (S.phase === 'countdown') {
-      S.paused = true;
-      S.countdown = Math.max(0, S.countdown - delta);
-      const remaining = Math.ceil(S.countdown);
-      objectiveTitle.textContent = remaining ? (S.room%10===0?'Boss incoming':'Prepare yourself') : 'Fight!';
-      objectiveDetail.textContent = remaining ? String(remaining) : 'The chamber is live';
-      if (S.countdown <= 0) {
-        S.phase = 'combat'; S.paused = false;
-        objectiveTitle.textContent = S.room%10===0?'Defeat the guardian':'Clear the chamber';
-        objectiveDetail.textContent = `${S.enemies.length} ${S.enemies.length===1?'enemy remains':'enemies remain'}`;
-      }
-      return;
-    }
-    if (S.phase === 'gate') {
-      S.paused = false; baseUpdate(delta); S.xp=0;
-      xpText.textContent = 'ROOM CLEARED';
-      xpBar.style.width = '100%';
-      const near = Math.hypot(S.x-door.x,S.y-door.y)<door.radius;
-      objectiveTitle.textContent = near?'Press Enter':'The door is open';
-      objectiveDetail.textContent = near?'Enter the next chamber':'Move to the north door';
-      return;
-    }
-    if (!S.paused && S.enemies.length) {
-      const target=S.enemies.reduce((near,e)=>!near||Math.hypot(e.x-S.x,e.y-S.y)<Math.hypot(near.x-S.x,near.y-S.y)?e:near,null);
-      mouse.x=target.x;mouse.y=target.y;
-      const held=mouse.down;mouse.down=true;baseUpdate(delta);mouse.down=held;S.xp=0;
-      const defeated=S.roomEnemyTotal-S.enemies.length;
-      xpText.textContent=`${defeated} / ${S.roomEnemyTotal} DEFEATED`;
-      xpBar.style.width=`${Math.max(0,defeated/S.roomEnemyTotal*100)}%`;
-      return;
-    }
-    baseUpdate(delta);S.xp=0;
-  };
-
-  const baseDraw = draw;
-  draw = () => {
-    baseDraw();
-    if (!S) return;
-    for (const enemy of S.enemies) {
-      ctx.save();
-      ctx.translate(enemy.x,enemy.y);
-      ctx.fillStyle='#09090b99';ctx.beginPath();ctx.ellipse(0,enemy.r*.8,enemy.r*1.15,enemy.r*.42,0,0,Math.PI*2);ctx.fill();
-      if(enemy.type==='boss'){
-        ctx.strokeStyle='#e6b45e';ctx.lineWidth=4;ctx.shadowColor='#ef7c32';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,enemy.r+10,0,Math.PI*2);ctx.stroke();
-        ctx.fillStyle='#e6b45e';ctx.beginPath();ctx.moveTo(-30,-24);ctx.lineTo(-42,-48);ctx.lineTo(-12,-35);ctx.fill();ctx.beginPath();ctx.moveTo(30,-24);ctx.lineTo(42,-48);ctx.lineTo(12,-35);ctx.fill();
-        ctx.shadowBlur=0;ctx.fillStyle='#ffdf76';ctx.fillRect(-15,-8,9,7);ctx.fillRect(6,-8,9,7);
-      }else{
-        ctx.fillStyle='#f1b35c';ctx.fillRect(-7,-5,4,4);ctx.fillRect(3,-5,4,4);
-        ctx.strokeStyle=enemy.type==='brute'?'#d86b4e':'#8d6572';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-enemy.r,2);ctx.lineTo(-enemy.r-7,-7);ctx.moveTo(enemy.r,2);ctx.lineTo(enemy.r+7,-7);ctx.stroke();
-      }
-      ctx.restore();
-    }
-    if(S.phase==='gate'){
-      ctx.save();ctx.fillStyle='#08090b';ctx.fillRect(426,21,108,32);ctx.fillStyle='#e6b45e';ctx.shadowColor='#ef7c32';ctx.shadowBlur=20;ctx.fillRect(438,26,84,23);ctx.fillStyle='#090b0d';ctx.fillRect(447,31,66,19);ctx.restore();
-    }
-    if(S.phase==='countdown'){
-      ctx.save();ctx.fillStyle='#00000088';ctx.fillRect(0,0,960,640);ctx.fillStyle=S.room%10===0?'#e6b45e':'#f4ead7';ctx.font='bold 96px Georgia';ctx.textAlign='center';ctx.fillText(String(Math.max(1,Math.ceil(S.countdown))),480,345);ctx.restore();
-    }
-  };
-
-  addEventListener('keydown',event=>{
-    if(event.key!=='Enter'||!S||S.phase!=='gate'||Math.hypot(S.x-door.x,S.y-door.y)>=door.radius)return;
-    S.room+=1;S.phase='transition';spawn();
-  });
+  const baseDraw=draw;draw=()=>{baseDraw();if(!S)return;for(const e of S.enemies){ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle='#05060999';ctx.beginPath();ctx.ellipse(0,e.r*.85,e.r*1.2,e.r*.4,0,0,7);ctx.fill();if(e.type==='wraith'){ctx.fillStyle='#73d8d0aa';ctx.beginPath();ctx.moveTo(0,-17);ctx.lineTo(13,12);ctx.lineTo(5,8);ctx.lineTo(0,20);ctx.lineTo(-6,8);ctx.lineTo(-13,12);ctx.fill();ctx.fillStyle='#d9ffff';ctx.fillRect(-5,-5,3,3);ctx.fillRect(2,-5,3,3)}else if(e.type==='sentinel'){ctx.strokeStyle='#b98d56';ctx.lineWidth=5;ctx.strokeRect(-18,-18,36,36);ctx.fillStyle='#f0bd62';ctx.fillRect(-9,-5,6,5);ctx.fillRect(3,-5,6,5)}else if(e.type==='boss'){ctx.strokeStyle='#e6b45e';ctx.lineWidth=4;ctx.shadowColor='#ef7c32';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,e.r+10,0,7);ctx.stroke();ctx.fillStyle='#e6b45e';ctx.beginPath();ctx.moveTo(-30,-24);ctx.lineTo(-42,-48);ctx.lineTo(-12,-35);ctx.fill();ctx.beginPath();ctx.moveTo(30,-24);ctx.lineTo(42,-48);ctx.lineTo(12,-35);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#ffdf76';ctx.fillRect(-15,-8,9,7);ctx.fillRect(6,-8,9,7)}else{ctx.fillStyle='#f1b35c';ctx.fillRect(-7,-5,4,4);ctx.fillRect(3,-5,4,4)}ctx.restore()}
+    if(S.phase==='gate'){ctx.save();ctx.fillStyle='#e6b45e';ctx.shadowColor='#ef7c32';ctx.shadowBlur=20;ctx.fillRect(438,26,84,23);ctx.fillStyle='#090b0d';ctx.fillRect(447,31,66,19);ctx.restore()}
+    if(S.phase==='countdown'){ctx.save();ctx.fillStyle='#0009';ctx.fillRect(0,0,960,640);ctx.fillStyle=S.room%5===0?'#e6b45e':'#f4ead7';ctx.font='bold 96px Georgia';ctx.textAlign='center';ctx.fillText(String(Math.max(1,Math.ceil(S.countdown))),480,345);ctx.restore()}};
+  addEventListener('keydown',e=>{if(e.key!=='Enter'||!S||S.phase!=='gate'||Math.hypot(S.x-door.x,S.y-door.y)>=door.radius)return;S.room+=1;S.phase='transition';spawn()});
 })();
